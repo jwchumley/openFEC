@@ -49,6 +49,59 @@ TERMS = [
     'commission'
 ]
 
+# TODO: Add more small
+small_records_sched_a = [
+    {'contributor_name': "Teachout Zephyr"},
+    {'contributor_state': 'GU'},
+]
+
+medium_records_sched_a = [
+    # this one gave us issues before because it was mid-sized about 21,000
+    {'committee_id': 'C00496067'},
+    # these seemed mid sized on a given two year period
+    {'contributor_city': 'Fresno'},
+    {'contirbutor_city': 'Sedona'},
+    {'contributor_occupation': 'government'},
+]
+
+large_records_sched_a = [
+    {'committee_id': 'C00401224'},
+    {'committee_id': ['C00401224', 'C00003418', 'C00010603', 'C00027466', 'C00005561', 'C00484642']},
+    {'contributor_state': 'NY'},
+    {'contributor_state': 'TX'},
+    # some common last names in the US
+    {'contributor_name': 'Smith'},
+    {'contributor_name': 'Johnson'},
+    # seeing this problem in production
+    {'data_type': 'processed', 'sort_hide_null': 'true', 'committee_id': 'C00401224',
+        'two_year_transaction_period': 2016, 'min_date': '07/01/2016', 'max_date': '07/31/2016',
+        'sort': '-contribution_receipt_date', 'per_page': 30
+    }
+]
+
+
+# took the worst performing queries from the log https://logs.fr.cloud.gov/goto/be56820fc05ef241c62c5641f16dcd3e
+poor_performance_a = [
+    {'sort_nulls_large': True, 'contributor_name': 'paul+johnson', 'two_year_transaction_period': 2014, 'min_date': '01%2F01%2F2013', 'max_date': '12%2F31%2F2014','contributor_state': 'IN', 'sort': '-contribution_receipt_date', 'per_page': 30, 'is_individual': True},
+    {'sort_nulls_large': True, 'contributor_name': 'Robert+F+Pence', 'two_year_transaction_period': 2014, 'min_date': '01%2F01%2F2013', 'max_date': '12%2F31%2F2014', 'sort': '-contribution_receipt_date', 'per_page': 100, 'is_individual': True},
+    {'sort_nulls_large': True, 'contributor_name': 'tom+lewis', 'contributor_name': 'thomas+lewis', 'two_year_transaction_period': 2016, 'min_date': '01%2F01%2F2015', 'max_date': '12%2F31%2F2016', 'sort': '-contribution_receipt_amount', 'per_page': 30, 'is_individual': True},
+    {'sort_nulls_large': True, 'contributor_name': 'Becher%2C+S', 'two_year_transaction_period': 2016, 'min_date': '01%2F01%2F2015', 'max_date': '12%2F31%2F2016&', 'contributor_state': 'FL', 'sort': '-contribution_receipt_date', 'per_page': 30, 'is_individual': True},
+    {'sort_nulls_large': True, 'contributor_name': 'Becher', 'two_year_transaction_period': 2016, 'min_date': '01%2F01%2F2015', 'max_date': '12%2F31%2F2016', 'contributor_state':'FL', 'sort':'-contribution_receipt_date', 'per_page': 30, 'is_individual': True},
+]
+
+poor_performance_b = [
+    {'sort_nulls_large': True, 'two_year_transaction_period': 2016, 'per_page': 100, 'sort':'disbursement_date', 'last_disbursement_date': '2016-03-03', 'last_index': 4070720161305573871},
+    {'sort_nulls_large': True, 'two_year_transaction_period': 2016, 'per_page': 100, 'sort':'disbursement_date', 'last_disbursement_date': '2016-03-03', 'last_index': 4062420161300286190},
+    {'sort_nulls_large': True, 'two_year_transaction_period': 2016, 'per_page': 100, 'sort':'disbursement_date', 'last_disbursement_date': '2016-03-03', 'last_index': 4062120161299938749},
+    {'sort_nulls_large': True, 'two_year_transaction_period': 2016, 'per_page': 100, 'sort':'disbursement_date', 'last_disbursement_date': '2016-03-03', 'last_index': 4061720161299122923},
+    {'sort_nulls_large': True, 'two_year_transaction_period': 2016, 'per_page': 100, 'sort':'disbursement_date', 'last_disbursement_date': '2016-03-03', 'last_index': 4061720161299122723},
+]
+
+# other poor performers
+# /v1/legal/search/?api_key=Iu7Rf7a8tUA6zPfSmOVJWS1adf3z7xM8XMOLonev&q=1993
+# /v1/schedules/schedule_b/efile/?page=1&sort=-disbursement_date
+
+
 class Tasks(locust.TaskSet):
 
     def on_start(self):
@@ -152,6 +205,37 @@ class Tasks(locust.TaskSet):
             'api_key': API_KEY,
         }
         self.client.get('legal/docs/murs/7074', name='legal_get', params=params)
+
+    @locust.task
+    def load_schedule_a_small(self):
+        params = random.choice(small_records_sched_a)
+        params['api_key'] = API_KEY
+        self.client.get('schedules/schedule_a/', name='schedule_a_small', params=params)
+
+    @locust.task
+    def load_schedule_a_medium(self):
+        params = random.choice(medium_records_sched_a)
+        params['api_key'] = API_KEY
+        self.client.get('schedules/schedule_a/', name='schedule_a_medium', params=params)
+
+    @locust.task
+    def load_schedule_a_large(self):
+        params = random.choice(large_records_sched_a)
+        params['api_key'] = API_KEY
+        self.client.get('schedules/schedule_a/', name='load_schedule_a_large', params=params)
+
+    @locust.task
+    def load_schedule_a_problematic(self):
+        params = random.choice(poor_performance_a)
+        params['api_key'] = API_KEY
+        self.client.get('schedules/schedule_a/', name='load_schedule_a_problematic', params=params)
+
+    @locust.task
+    def load_schedule_b_problematic(self):
+        params = random.choice(poor_performance_b)
+        params['api_key'] = API_KEY
+        self.client.get('schedules/schedule_b/', name='load_schedule_b_problematic', params=params)
+
 
 class Swarm(locust.HttpLocust):
     task_set = Tasks
