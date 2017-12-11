@@ -97,10 +97,6 @@ poor_performance_b = [
     {'sort_nulls_large': True, 'two_year_transaction_period': 2016, 'per_page': 100, 'sort':'disbursement_date', 'last_disbursement_date': '2016-03-03', 'last_index': 4061720161299122723},
 ]
 
-# other poor performers
-# /v1/legal/search/?api_key=Iu7Rf7a8tUA6zPfSmOVJWS1adf3z7xM8XMOLonev&q=1993
-# /v1/schedules/schedule_b/efile/?page=1&sort=-disbursement_date
-
 
 class Tasks(locust.TaskSet):
 
